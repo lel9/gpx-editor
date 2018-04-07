@@ -9,10 +9,10 @@ class RemoveRouteCommand : public Command
 private:
     int _pos;
     shared_ptr<Route> _route;
-    shared_ptr<RouteTableModel> _model;
+    RouteTableModel *_model;
 
 public:
-    RemoveRouteCommand(int pos, const shared_ptr<RouteTableModel> &model);
+    RemoveRouteCommand(int pos, RouteTableModel *model);
     ~RemoveRouteCommand() = default;
 
     virtual int execute() override;

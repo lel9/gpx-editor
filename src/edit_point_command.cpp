@@ -1,16 +1,18 @@
 #include "edit_point_command.h"
 
-EditPointCommand::EditPointCommand(int pos, const QGeoCoordinate &newPoint,
-                                   const shared_ptr<Route> &route) :
-    _pos(pos), _newPoint(newPoint), _route(route)
+EditPointCommand::EditPointCommand(QModelIndex index, double val, RouteTableModel *model) :
+    _index(index), _val(val), _model(model)
 {
+    _route = _model->currentRoute();
 }
 
 int EditPointCommand::execute()
 {
     try
     {
-        _oldPoint = _route->replacePoint(_pos, _newPoint);
+        _model->setCurrentRoute(_route);
+        _model->currentRouteChanged(_route);
+        _oldVal = _model->replacePointInCurrentRoute(_index, _val);
     }
     catch (std::exception &)
     {
@@ -24,7 +26,9 @@ int EditPointCommand::unExecute()
 {
     try
     {
-        _route->replacePoint(_pos, _oldPoint);
+        _model->setCurrentRoute(_route);
+        _model->currentRouteChanged(_route);
+        _model->replacePointInCurrentRoute(_index, _oldVal);
     }
     catch (std::exception &)
     {

@@ -14,7 +14,7 @@ int PointTableModel::rowCount(const QModelIndex &parent) const
 int PointTableModel::columnCount(const QModelIndex& parent) const
 {
     Q_UNUSED(parent)
-    return 2;
+    return 3;
 }
 
 QVariant PointTableModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -31,6 +31,8 @@ QVariant PointTableModel::headerData(int section, Qt::Orientation orientation, i
         return trUtf8("Широта");
     case 1:
         return trUtf8("Долгота");
+    case 2:
+        return trUtf8("Высота");
     }
 
     return QVariant();
@@ -48,6 +50,8 @@ QVariant PointTableModel::data(const QModelIndex &index, int role) const
         return _points[index.row()].latitude();
     case 1:
         return _points[index.row()].longitude();
+    case 2:
+        return _points[index.row()].altitude();
     }
     return QVariant();
 }
@@ -62,20 +66,20 @@ bool PointTableModel::setData(const QModelIndex &index, const QVariant &value, i
     double val = value.toDouble(&ok);
     if (ok)
     {
-        QGeoCoordinate point = _points[row];
         switch(index.column())
         {
         case 0:
-            point.setLatitude(val);
+            _points[row].setLatitude(val);
             break;
         case 1:
-             point.setLongitude(val);
+             _points[row].setLongitude(val);
+            break;
+        case 2:
+            _points[row].setAltitude(val);
             break;
         default:
             return false;
         }
-
-        emit pointEdit(row, point);
     }
     return ok;
 }
@@ -86,19 +90,24 @@ Qt::ItemFlags PointTableModel::flags(const QModelIndex &index) const
     return flags |= Qt::ItemIsEditable;
 }
 
+QModelIndex PointTableModel::topLeftIndex() const
+{
+    return createIndex(0,0);
+}
+
+QModelIndex PointTableModel::bottomRightIndex() const
+{
+    return createIndex(rowCount()-1, columnCount()-1);
+}
+
 void PointTableModel::insertPoint(int row, const QGeoCoordinate &point)
 {
-    beginInsertRows(QModelIndex(), row, row);
     _points.insert(row, point);
-    endInsertRows();
 }
 
 void PointTableModel::addPoint(const QGeoCoordinate &point)
 {
-    int row = _points.count();
-    beginInsertRows(QModelIndex(), row, row);
     _points.append(point);
-    endInsertRows();
 }
 
 QGeoCoordinate PointTableModel::removePoint(int row)
@@ -106,9 +115,7 @@ QGeoCoordinate PointTableModel::removePoint(int row)
     if (row < 0 || row >= _points.length())
         throw std::out_of_range("Невозможно удалить точку: некорректный индекс");
     QGeoCoordinate point = _points.at(row);
-    beginRemoveRows(QModelIndex(), row, row);
     _points.removeAt(row);
-    endRemoveRows();
     return point;
 }
 
@@ -118,7 +125,6 @@ QGeoCoordinate PointTableModel::replacePoint(int row, const QGeoCoordinate &poin
         throw std::out_of_range("Невозможно отредактировать точку: некорректный индекс");
     QGeoCoordinate oldPoint = _points.at(row);
     _points[row] = point;
-    emit dataChanged(createIndex(row, 0), createIndex(row, 1));
     return oldPoint;
 }
 
@@ -133,6 +139,6 @@ double PointTableModel::distance() const
     int n = _points.length() - 1;
     for (int i = 0; i < n; i++)
         dist += _points[i].distanceTo(_points[i+1]);
-    return dist;
+    return dist / 1000.;
 }
 

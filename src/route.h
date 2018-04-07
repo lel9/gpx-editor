@@ -46,6 +46,7 @@ public:
     void appendPoint(const QGeoCoordinate &point);
     QGeoCoordinate removePoint(int pos);
     QGeoCoordinate replacePoint(int pos, const QGeoCoordinate &point);
+    double replacePoint(QModelIndex index, double val);
 
     // для тестов
     friend bool operator ==(const Route &first, const Route &second);

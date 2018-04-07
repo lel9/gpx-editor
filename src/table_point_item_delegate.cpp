@@ -20,3 +20,13 @@ QWidget *TablePointItemDelegate::createEditor(QWidget *parent,
     }
     return w;
 }
+
+#include <QEvent>
+bool TablePointItemDelegate::editorEvent(QEvent *event, QAbstractItemModel *model,
+                                         const QStyleOptionViewItem &option, const QModelIndex &index)
+{
+    if (event->type() == QEvent::Enter)
+        emit editPoint(model, index);
+
+    return QItemDelegate::editorEvent(event, model, option, index);
+}

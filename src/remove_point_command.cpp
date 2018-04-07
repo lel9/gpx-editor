@@ -1,16 +1,19 @@
 #include "remove_point_command.h"
 #include "add_point_command.h"
 
-RemovePointCommand::RemovePointCommand(int pos, const shared_ptr<Route> &route) :
-    _pos(pos), _route(route)
+RemovePointCommand::RemovePointCommand(int pos, RouteTableModel *model) :
+    _pos(pos), _model(model)
 {
+    _route = _model->currentRoute();
 }
 
 int RemovePointCommand::execute()
 {
     try
     {
-        _point = _route->removePoint(_pos);
+        _model->setCurrentRoute(_route);
+        _model->currentRouteChanged(_route);
+        _point = _model->removePointFromCurrentRoute(_pos);
     }
     catch (std::exception &)
     {
@@ -21,7 +24,9 @@ int RemovePointCommand::execute()
 
 int RemovePointCommand::unExecute()
 {
-    AddPointCommand command(_pos, _route, _point);
+    _model->setCurrentRoute(_route);
+    _model->currentRouteChanged(_route);
+    AddPointCommand command(_pos, _point, _model);
     command.execute();
     return 0;
 }

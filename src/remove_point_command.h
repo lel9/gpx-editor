@@ -2,17 +2,18 @@
 #define REMOVE_POINT_COMMAND_H
 
 #include "command.h"
-#include "route.h"
+#include "route_table_model.h"
 
 class RemovePointCommand : public Command
 {
 private:
     int _pos;
-    shared_ptr<Route> _route;
+    RouteTableModel *_model;
+    int _route;
     QGeoCoordinate _point;
 
 public:
-    RemovePointCommand(int pos, const shared_ptr<Route> &route);
+    RemovePointCommand(int pos, RouteTableModel *model);
     ~RemovePointCommand() = default;
 
     virtual int execute() override;

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += testlib positioning location
+QT       += widgets testlib positioning location
 
 QT       -= gui
 

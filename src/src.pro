@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets location positioning
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets location positioning printsupport
 
 CONFIG += C++14
 
@@ -29,7 +29,12 @@ SOURCES += main.cpp\
     route_loader.cpp \
     route_table_model.cpp \
     table_point_item_delegate.cpp \
-    route_saver.cpp
+    route_saver.cpp \
+    presenter.cpp \
+    baseview.cpp \
+    tablewidget.cpp \
+    graphplot.cpp \
+    qcustomplot/qcustomplot.cpp
 
 HEADERS  += mainwindow.h \
     add_point_command.h \
@@ -45,6 +50,12 @@ HEADERS  += mainwindow.h \
     route_loader.h \
     route_table_model.h \
     table_point_item_delegate.h \
-    route_saver.h
+    route_saver.h \
+    presenter.h \
+    baseview.h \
+    enum_insert_point.h \
+    tablewidget.h \
+    graphplot.h \
+    qcustomplot/qcustomplot.h
 
 FORMS    += mainwindow.ui

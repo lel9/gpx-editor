@@ -27,6 +27,13 @@ void SimpleRouteSaver::save(const QVector<shared_ptr<Route>> &routes)
         outputStream.writeAttribute("name", route->name().toUtf8());
         outputStream.writeAttribute("date", route->date().toString().toUtf8());
         outputStream.writeAttribute("polyline", route->polyline().toUtf8());
+        for (int i = 0; i < route->length(); i++)
+        {
+            outputStream.writeStartElement("altitude");
+            outputStream.writeAttribute("point", QString::number(i));
+            outputStream.writeAttribute("value", QString::number(route->pointAt(i).altitude()));
+            outputStream.writeEndElement();
+        }
         outputStream.writeEndElement();
     }
     outputStream.writeEndElement();

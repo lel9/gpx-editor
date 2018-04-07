@@ -2,7 +2,7 @@
 #define POINTTABLEMODEL_H
 
 #include <QAbstractTableModel>
-#include <QtLocation/QGeoRoute>
+#include <QGeoCoordinate>
 
 class PointTableModel : public QAbstractTableModel
 {
@@ -16,6 +16,9 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     Qt::ItemFlags flags(const QModelIndex& index) const;
 
+    virtual QModelIndex topLeftIndex() const;
+    virtual QModelIndex bottomRightIndex() const;
+
     void insertPoint(int row, const QGeoCoordinate &point);
     void addPoint(const QGeoCoordinate &point);
     QGeoCoordinate removePoint(int row);
@@ -23,9 +26,6 @@ public:
 
     QGeoCoordinate pointAt(int pos) const;
     double distance() const;
-
-signals:
-    void pointEdit(int row, const QGeoCoordinate &newPoint);
 
 private:
     QList<QGeoCoordinate> _points;

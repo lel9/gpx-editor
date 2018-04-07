@@ -1,7 +1,7 @@
 #include "remove_route_command.h"
 #include "add_route_command.h"
 
-RemoveRouteCommand::RemoveRouteCommand(int pos, const shared_ptr<RouteTableModel> &model) :
+RemoveRouteCommand::RemoveRouteCommand(int pos, RouteTableModel *model) :
     _pos(pos), _model(model)
 {
 }

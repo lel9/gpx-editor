@@ -2,18 +2,19 @@
 #define EDITPOINTCOMMAND_H
 
 #include "command.h"
-#include "route.h"
+#include "route_table_model.h"
 
 class EditPointCommand : public Command
 {
 private:
-    int _pos;
-    QGeoCoordinate _oldPoint;
-    QGeoCoordinate _newPoint;
-    shared_ptr<Route> _route;
+    QModelIndex _index;
+    double _val;
+    double _oldVal;
+    int _route;
+    RouteTableModel *_model;
 
 public:
-    EditPointCommand(int pos, const QGeoCoordinate &newPoint, const shared_ptr<Route> &route);
+    EditPointCommand(QModelIndex index, double val, RouteTableModel *model);
     ~EditPointCommand() = default;
 
     virtual int execute() override;

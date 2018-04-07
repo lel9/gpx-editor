@@ -2,17 +2,18 @@
 #define ADDPOINTBEFORECOMMAND_H
 
 #include "command.h"
-#include "route.h"
+#include "route_table_model.h"
 
 class AddPointCommand : public Command
 {
 private:
     int _pos;
-    shared_ptr<Route> _route;
     QGeoCoordinate _point;
+    int _route;
+    RouteTableModel *_model;
 public:
-    AddPointCommand(int pos, const shared_ptr<Route> &route);
-    AddPointCommand(int pos, const shared_ptr<Route> &route, const QGeoCoordinate &point);
+    AddPointCommand(int pos, RouteTableModel *model);
+    AddPointCommand(int pos, const QGeoCoordinate &point, RouteTableModel *model);
     ~AddPointCommand() = default;
 
     virtual int execute() override;

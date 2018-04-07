@@ -1,14 +1,21 @@
 #include "route_table_model.h"
 #include "point_table_model.h"
 
+#include <QStandardPaths>
+#include <QDir>
+
 RouteTableModel::RouteTableModel(QObject *parent) :
-    QAbstractTableModel(parent), currentRouteIndex(0)
+    QAbstractTableModel(parent), currentIndex(0)
 {
 }
 
 RouteTableModel::RouteTableModel(const RouteTableModel &model) :
     QAbstractTableModel(),
-    _routes(model._routes), currentRouteIndex(model.currentRouteIndex)
+    _routes(model._routes), currentIndex(model.currentIndex)
+{
+}
+
+RouteTableModel::~RouteTableModel()
 {
 }
 
@@ -88,19 +95,62 @@ Qt::ItemFlags RouteTableModel::flags(const QModelIndex &index) const
     return flags;
 }
 
+PointTableModel *RouteTableModel::currentPointModel() const
+{
+    return _routes[currentIndex]->model().get();
+}
+
+void RouteTableModel::recoverRoutes()
+{
+    dataPath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+    QDir dir(dataPath);
+    if (!dir.exists())
+        dir.mkpath(dataPath);
+    dataPath = dir.absoluteFilePath("routes.xml");
+
+    try
+    {
+        loadRoutesFromPolyline(dataPath);
+    }
+    catch(std::exception &) { }
+}
+
+#include "route_loader.h"
+void RouteTableModel::loadRoutesFromPolyline(const QString &filename)
+{
+    shared_ptr<RouteLoader> loader = make_shared<PolylineLoader>();
+    loader->setFileName(filename);
+    loadRoutes(loader);
+}
+
+void RouteTableModel::loadRoutesFromGPX(const QString &filename)
+{
+    shared_ptr<RouteLoader> loader = make_shared<GPXLoader>();
+    loader->setFileName(filename);
+    loadRoutes(loader);
+}
+
 void RouteTableModel::addRoute(const shared_ptr<Route> &route)
 {
-    int row = _routes.count();
-    beginInsertRows(QModelIndex(), row, row);
     _routes.append(route);
-    endInsertRows();
+    emit dataChanged(createIndex(_routes.length()-1, 0), createIndex(rowCount()-1, columnCount()-1));
+
+    currentIndex = _routes.length()-1;
+    emit currentRouteChanged(currentIndex);
+}
+
+void RouteTableModel::addRoute()
+{
+    addRoute(make_shared<Route>());
 }
 
 void RouteTableModel::insertRoute(int row, const shared_ptr<Route> &route)
 {
-    beginInsertRows(QModelIndex(), row, row);
     _routes.insert(row, route);
-    endInsertRows();
+    emit dataChanged(createIndex(row, 0), createIndex(rowCount()-1, columnCount()-1));
+
+    currentIndex = row;
+    emit currentRouteChanged(currentIndex);
 }
 
 shared_ptr<Route> RouteTableModel::removeRoute(int row)
@@ -109,36 +159,96 @@ shared_ptr<Route> RouteTableModel::removeRoute(int row)
         throw out_of_range("Невозможно удалить маршрут: некорректный индекс");
 
     shared_ptr<Route> route = _routes.at(row);
-    beginRemoveRows(QModelIndex(), row, row);
     _routes.remove(row);
-    endRemoveRows();
+    emit dataChanged(createIndex(row, 0), createIndex(rowCount()-1, columnCount()-1));
+
+    if (_routes.length() > 0)
+    {
+        if (row == _routes.length())
+            currentIndex = row-1;
+        else
+            currentIndex = row;
+        emit currentRouteChanged(currentIndex);
+    }
+
     return route;
 }
 
-void RouteTableModel::saveRoutes(const shared_ptr<RouteSaver> &saver)
+void RouteTableModel::insertPointToCurrentRoute(int pos)
 {
-    saver->save(_routes);
+   insertPointToCurrentRoute(pos, QGeoCoordinate(0,0));
 }
 
-shared_ptr<Route> RouteTableModel::currentRoute()
+void RouteTableModel::insertPointToCurrentRoute(int pos, const QGeoCoordinate &point)
 {
-    if (currentRouteIndex < 0 || currentRouteIndex >= _routes.length())
-        throw std::out_of_range("Некорректный индекс");
-    return _routes[currentRouteIndex];
+    shared_ptr<Route> currentRoute = _routes[currentIndex];
+    currentRoute->insertPoint(pos, point);
+
+    PointTableModel *pointModel = currentRoute->model().get();
+    emit pointDataChanged(pointModel->index(pos, 0), pointModel->bottomRightIndex());
+}
+
+QGeoCoordinate RouteTableModel::removePointFromCurrentRoute(int pos)
+{
+    shared_ptr<Route> currentRoute = _routes[currentIndex];
+    QGeoCoordinate point = currentRoute->removePoint(pos);
+
+    PointTableModel *pointModel = currentRoute->model().get();
+    emit pointDataChanged(pointModel->index(pos, 0), pointModel->bottomRightIndex());
+
+    return point;
+}
+
+double RouteTableModel::replacePointInCurrentRoute(QModelIndex index, double val)
+{
+    double oldPoint = _routes[currentIndex]->replacePoint(index, val);
+    emit pointDataChanged(index, index);
+    return oldPoint;
+}
+
+QString RouteTableModel::currentPolyline()
+{
+    return _routes[currentIndex]->polyline();
+}
+
+void RouteTableModel::saveRoutes()
+{
+    SimpleRouteSaver saver;
+    saver.setFileName(dataPath);
+    try
+    {
+        saver.save(_routes);
+    }
+    catch (std::exception &) { }
+}
+
+int RouteTableModel::currentRoute()
+{
+    return currentIndex;
 }
 
 void RouteTableModel::setCurrentRoute(int row)
 {
     if (row >=0 && row < _routes.length())
-        currentRouteIndex = row;
+        currentIndex = row;
     else
-        currentRouteIndex = 0;
+        currentIndex = 0;
+}
+
+void RouteTableModel::loadRoutes(shared_ptr<RouteLoader> loader)
+{
+    int oldLen = _routes.length();
+    _routes.append(loader->load());
+    emit dataChanged(createIndex(oldLen, 0), createIndex(rowCount()-1, columnCount()-1));
+
+    currentIndex = _routes.length()-1;
+    emit currentRouteChanged(currentIndex);
 }
 
 RouteTableModel& RouteTableModel::operator =(const RouteTableModel &model)
 {
     _routes = model._routes;
-    currentRouteIndex = model.currentRouteIndex;
+    currentIndex = model.currentIndex;
     return *this;
 }
 

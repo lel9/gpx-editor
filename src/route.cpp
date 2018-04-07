@@ -105,6 +105,14 @@ QGeoCoordinate Route::replacePoint(int pos, const QGeoCoordinate &point)
     return _model->replacePoint(pos, point);
 }
 
+double Route::replacePoint(QModelIndex index, double val)
+{
+    double oldVal = _model->data(index).toDouble();
+    _dirtyPolyline = _dirtyDist = true;
+    _model->setData(index, val);
+    return oldVal;
+}
+
 bool operator !=(const Route &first, const Route &second)
 {
     if (first.length() != second.length())

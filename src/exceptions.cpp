@@ -19,7 +19,7 @@ EncoderInvalidLatException::EncoderInvalidLatException(int row) : _row(row)
 
 const char* EncoderInvalidLatException::what() const throw()
 {
-    QString msg = "Некорректное значение широты: точка " + QString::number(_row);
+    QString msg = "Некорректное значение широты: точка " + QString::number(_row+1);
     return msg.toUtf8().data();
 }
 
@@ -29,7 +29,7 @@ EncoderInvalidLonException::EncoderInvalidLonException(int row) : _row(row)
 
 const char* EncoderInvalidLonException::what() const throw()
 {
-    QString msg = "Некорректное значение долготы: точка " + QString::number(_row);
+    QString msg = "Некорректное значение долготы: точка " + QString::number(_row+1);
     return msg.toUtf8().data();
 }
 
