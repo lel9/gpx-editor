@@ -37,14 +37,24 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-QTableWidget *MainWindow::routeView() const
+TableWidget *MainWindow::routeView() const
 {
     return ui->tableOfRoutes;
 }
 
-QTableWidget *MainWindow::pointView() const
+TableWidget *MainWindow::pointView() const
 {
     return ui->tableOfPoints;
+}
+
+GraphPlot *MainWindow::graphPlot() const
+{
+    return ui->graphPlot;
+}
+
+QTextEdit *MainWindow::polylineEdit() const
+{
+    return ui->textEditPolyline;
 }
 
 QModelIndexList MainWindow::selectedRouteRows() const

@@ -10,37 +10,20 @@ Presenter::Presenter(BaseView *view) :
     view(view)
 {
     model = new RouteTableModel;
-
-    connect(view, SIGNAL(importFromGPX(QString)),
-            this, SLOT(on_importFromGPX(QString)));
-    connect(view, SIGNAL(importFromPolyline(QString)),
-            this, SLOT(on_importFromPolyline(QString)));
-    connect(view, SIGNAL(addRoute()),
-            this, SLOT(on_addRoute()));
-    connect(view, SIGNAL(deleteRoute()),
-            this, SLOT(on_deleteRoute()));
-    connect(view, SIGNAL(insertPoint(InsertPointPos)),
-            this, SLOT(on_insertPoint(InsertPointPos)));
-    connect(view, SIGNAL(deletePoint()),
-            this, SLOT(on_deletePoint()));
-    connect(view, SIGNAL(pointChanged(QModelIndex,double)),
-            this, SLOT(on_pointChanged(QModelIndex,double)));
-    connect(view, SIGNAL(currentRouteChanged()),
-            this, SLOT(on_currentRouteChanged()));
-
-    connect(view, SIGNAL(redo()),
-            this, SLOT(on_redo()));
-    connect(view, SIGNAL(undo()),
-            this, SLOT(on_undo()));
-
-    connect(model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)),
-            this, SLOT(on_routesChanged(QModelIndex,QModelIndex)));
-    connect(model, SIGNAL(pointDataChanged(QModelIndex,QModelIndex)),
-            this, SLOT(on_pointDataChanged(QModelIndex,QModelIndex)));
-    connect(model, SIGNAL(currentRouteChanged(int)),
-            view, SLOT(selectRoute(int)));
-
+    initConnections();
     model->recoverRoutes();
+}
+
+Presenter::Presenter(BaseView *view, RouteTableModel *model) :
+    model(model), view(view)
+{
+    initConnections();
+}
+
+Presenter::Presenter(const Presenter &other)
+{
+    *model = *(other.model);
+    view = (other.view);
 }
 
 Presenter::~Presenter()
@@ -187,5 +170,37 @@ void Presenter::executeCommand(Command *command)
         commandUndoStack.push(command);
         view->setUndoEnabled(true);
     }
+}
+
+void Presenter::initConnections()
+{
+    connect(view, SIGNAL(importFromGPX(QString)),
+            this, SLOT(on_importFromGPX(QString)));
+    connect(view, SIGNAL(importFromPolyline(QString)),
+            this, SLOT(on_importFromPolyline(QString)));
+    connect(view, SIGNAL(addRoute()),
+            this, SLOT(on_addRoute()));
+    connect(view, SIGNAL(deleteRoute()),
+            this, SLOT(on_deleteRoute()));
+    connect(view, SIGNAL(insertPoint(InsertPointPos)),
+            this, SLOT(on_insertPoint(InsertPointPos)));
+    connect(view, SIGNAL(deletePoint()),
+            this, SLOT(on_deletePoint()));
+    connect(view, SIGNAL(pointChanged(QModelIndex,double)),
+            this, SLOT(on_pointChanged(QModelIndex,double)));
+    connect(view, SIGNAL(currentRouteChanged()),
+            this, SLOT(on_currentRouteChanged()));
+
+    connect(view, SIGNAL(redo()),
+            this, SLOT(on_redo()));
+    connect(view, SIGNAL(undo()),
+            this, SLOT(on_undo()));
+
+    connect(model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)),
+            this, SLOT(on_routesChanged(QModelIndex,QModelIndex)));
+    connect(model, SIGNAL(pointDataChanged(QModelIndex,QModelIndex)),
+            this, SLOT(on_pointDataChanged(QModelIndex,QModelIndex)));
+    connect(model, SIGNAL(currentRouteChanged(int)),
+            view, SLOT(selectRoute(int)));
 }
 

@@ -39,3 +39,43 @@ void GraphPlot::updateHigh(const QModelIndex &topLeft,
     replot();
 }
 
+GraphPlot &GraphPlot::operator=(const GraphPlot &other)
+{
+    for (int i = 0; i < other.graphCount(); i++)
+    {
+        addGraph();
+        mGraphs[i]->setData(other.mGraphs[i]->data());
+    }
+    return *this;
+}
+
+bool operator==(const GraphPlot &first, const GraphPlot &second)
+{
+    if (first.graphCount() != second.graphCount())
+        return false;
+
+    for (int i = 0; i < first.graphCount(); i++)
+    {
+        int len1 = first.mGraphs[i]->data()->values().length();
+        int len2 = second.mGraphs[i]->data()->values().length();
+
+        if (len1 != len2)
+            return false;
+
+        for (int i = 0; i < len1; i++)
+        {
+            if (first.mGraphs[i]->data()->values()[i].key != second.mGraphs[i]->data()->values()[i].key)
+                return false;
+            if (first.mGraphs[i]->data()->values()[i].value != second.mGraphs[i]->data()->values()[i].value)
+                return false;
+        }
+    }
+
+    return true;
+}
+
+bool operator!=(const GraphPlot &first, const GraphPlot &second)
+{
+    return (first == second);
+}
+

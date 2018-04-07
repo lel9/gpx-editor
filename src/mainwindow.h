@@ -43,8 +43,10 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    virtual QTableWidget* routeView() const override;
-    virtual QTableWidget* pointView() const override;
+    virtual TableWidget *routeView() const override;
+    virtual TableWidget *pointView() const override;
+    virtual GraphPlot *graphPlot() const override;
+    virtual QTextEdit *polylineEdit() const override;
 
     virtual QModelIndexList selectedRouteRows() const override;
     virtual QModelIndexList selectedPointRows() const override;

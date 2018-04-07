@@ -19,7 +19,10 @@ private:
     QStack<Command*> commandRedoStack;
 
 public:
+    Presenter() { }
     Presenter(BaseView *view);
+    Presenter(BaseView *view, RouteTableModel *model);
+    Presenter(const Presenter &other);
     ~Presenter();
 
 public slots:
@@ -42,6 +45,7 @@ public slots:
 
 private:
     void executeCommand(Command *command);
+    void initConnections();
 };
 
 #endif // PRESENTER_H

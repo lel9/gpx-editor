@@ -6,3 +6,8 @@ BaseView::BaseView(QWidget *parent) :
 
 }
 
+BaseView::~BaseView()
+{
+
+}
+

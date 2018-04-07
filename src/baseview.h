@@ -1,11 +1,11 @@
 #ifndef BASEVIEW_H
 #define BASEVIEW_H
 
-#include <QString>
-#include <QTableWidget>
 #include <QMainWindow>
 #include "enum_insert_point.h"
 #include "route_table_model.h"
+#include "tablewidget.h"
+#include "graphplot.h"
 
 class BaseView : public QMainWindow
 {
@@ -13,9 +13,12 @@ class BaseView : public QMainWindow
 
 public:
     BaseView(QWidget *parent = 0);
+    virtual ~BaseView();
 
-    virtual QTableWidget* routeView() const = 0;
-    virtual QTableWidget* pointView() const = 0;
+    virtual TableWidget* routeView() const = 0;
+    virtual TableWidget* pointView() const = 0;
+    virtual GraphPlot* graphPlot() const = 0;
+    virtual QTextEdit *polylineEdit() const = 0;
 
     virtual QModelIndexList selectedRouteRows() const = 0;
     virtual QModelIndexList selectedPointRows() const = 0;

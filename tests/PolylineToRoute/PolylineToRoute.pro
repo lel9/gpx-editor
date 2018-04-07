@@ -21,11 +21,15 @@ SOURCES += \
     ../../src/converter.cpp \
     ../../src/exceptions.cpp \
     ../../src/route.cpp \
-    ../../src/point_table_model.cpp
+    ../../src/point_table_model.cpp \
+    ../../src/route_loader.cpp \
+    ../../src/route_saver.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 HEADERS += \
     ../../src/converter.h \
     ../../src/exceptions.h \
     ../../src/route.h \
-    ../../src/point_table_model.h
+    ../../src/point_table_model.h \
+    ../../src/route_loader.h \
+    ../../src/route_saver.h
