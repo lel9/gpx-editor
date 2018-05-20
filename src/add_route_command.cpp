@@ -4,7 +4,7 @@
 AddRouteCommand::AddRouteCommand(RouteTableModel *model) :
     _model(model)
 {
-    _pos = _model->rowCount();
+    _pos = _model->routesCount();
     _route = make_shared<Route>();
 }
 

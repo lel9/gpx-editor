@@ -16,6 +16,8 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     Qt::ItemFlags flags(const QModelIndex& index) const;
 
+    virtual QStringList headers() const;
+
     virtual QModelIndex topLeftIndex() const;
     virtual QModelIndex bottomRightIndex() const;
 
@@ -25,10 +27,12 @@ public:
     QGeoCoordinate replacePoint(int row, const QGeoCoordinate &point);
 
     QGeoCoordinate pointAt(int pos) const;
+    const QList<QGeoCoordinate> &points() const;
     double distance() const;
 
 private:
     QList<QGeoCoordinate> _points;
+    QStringList _headers;
 };
 
 #endif // POINTTABLEMODEL_H

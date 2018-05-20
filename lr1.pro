@@ -2,4 +2,6 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     src \
-    tests
+    Turns \
+    Slopes \
+    SlopeTypes

@@ -1,17 +1,15 @@
-#include "random_route_factory.h"
-#include <ctime>
+#include "route_factory.h"
 
-RandomRouteFactory::RandomRouteFactory()
+RouteFactory::RouteFactory()
 {
 
 }
 
-shared_ptr<Route> RandomRouteFactory::create(int pointCount)
+shared_ptr<Route> RouteFactory::create(const RouteData &data)
 {
-    srand(time(0));
     shared_ptr<Route> route = make_shared<Route>();
-    for (int j = 0; j < pointCount; j++)
-        route->appendPoint(QGeoCoordinate(-90 + rand() % 181, -180 + rand() % 361));
+    route->setName(data.name);
+    route->setDistance(data.distance);
+    route->setDate(data.date);
     return route;
 }
-

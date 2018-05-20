@@ -8,7 +8,16 @@ Route::Route() :
     _dirtyDist(false),
     _dirtyPolyline(false)
 {
-    _model = make_shared<PointTableModel>();
+}
+
+Route::Route(const Route &other) :
+    _date(other._date),
+    _name(other._name),
+    _dist(other._dist),
+    _dirtyDist(other._dirtyDist),
+    _dirtyPolyline(other._dirtyPolyline),
+    _points(other._points)
+{
 }
 
 Route::~Route()
@@ -37,27 +46,30 @@ QString Route::polyline()
 
 QGeoCoordinate Route::pointAt(int pos) const
 {
-    return _model->pointAt(pos);
+    return _points[pos];
 }
 
 int Route::length() const
 {
-    return _model->rowCount();
+    return _points.length();
 }
 
 double Route::distance()
 {
     if (_dirtyDist)
     {
-        _dist = _model->distance();
+        _dist = 0;
+        int n = _points.length() - 1;
+        for (int i = 0; i < n; i++)
+            _dist += _points[i].distanceTo(_points[i+1]) / 1000.;
         _dirtyDist = false;
     }
     return _dist;
 }
 
-shared_ptr<PointTableModel> Route::model() const
+const QList<QGeoCoordinate> &Route::points() const
 {
-    return _model;
+    return _points;
 }
 
 void Route::setDate(const QDate &date)
@@ -68,6 +80,11 @@ void Route::setDate(const QDate &date)
 void Route::setName(const QString &name)
 {
     _name = name;
+}
+
+void Route::setDistance(double dist)
+{
+    _dist = dist;
 }
 
 void Route::setPolyline(const QString &polyline)
@@ -84,33 +101,29 @@ void Route::updatePolyline()
 void Route::insertPoint(int pos, const QGeoCoordinate &point)
 {
     _dirtyPolyline = _dirtyDist = true;
-    _model->insertPoint(pos, point);
+    _points.insert(pos, point);
 }
 
 void Route::appendPoint(const QGeoCoordinate &point)
 {
     _dirtyPolyline = _dirtyDist = true;
-    _model->addPoint(point);
+    _points.append(point);
 }
 
 QGeoCoordinate Route::removePoint(int pos)
 {
     _dirtyPolyline = _dirtyDist = true;
-    return _model->removePoint(pos);
+    QGeoCoordinate ret = _points.at(pos);
+    _points.removeAt(pos);
+    return ret;
 }
 
 QGeoCoordinate Route::replacePoint(int pos, const QGeoCoordinate &point)
 {
     _dirtyPolyline = _dirtyDist = true;
-    return _model->replacePoint(pos, point);
-}
-
-double Route::replacePoint(QModelIndex index, double val)
-{
-    double oldVal = _model->data(index).toDouble();
-    _dirtyPolyline = _dirtyDist = true;
-    _model->setData(index, val);
-    return oldVal;
+    QGeoCoordinate ret = _points.at(pos);
+    _points[pos] = point;
+    return ret;
 }
 
 bool operator !=(const Route &first, const Route &second)

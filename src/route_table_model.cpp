@@ -1,103 +1,32 @@
 #include "route_table_model.h"
-#include "point_table_model.h"
 
 #include <QStandardPaths>
 #include <QDir>
 
-RouteTableModel::RouteTableModel(QObject *parent) :
-    QAbstractTableModel(parent), currentIndex(0)
+RouteTableModel::RouteTableModel() :
+   currentIndex(0)
 {
 }
 
 RouteTableModel::RouteTableModel(const RouteTableModel &model) :
-    QAbstractTableModel(),
-    _routes(model._routes), currentIndex(model.currentIndex)
+    currentIndex(model.currentIndex)
 {
+    for (auto el : model._routes)
+       _routes << el;
 }
 
 RouteTableModel::~RouteTableModel()
 {
 }
 
-int RouteTableModel::rowCount(const QModelIndex &parent) const
+int RouteTableModel::routesCount() const
 {
-    Q_UNUSED(parent)
     return _routes.count();
 }
 
-int RouteTableModel::columnCount(const QModelIndex& parent) const
+const QVector<shared_ptr<Route>> &RouteTableModel::routes() const
 {
-    Q_UNUSED(parent)
-    return 3;
-}
-
-QVariant RouteTableModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
-    if(role != Qt::DisplayRole)
-        return QVariant();
-
-    if(orientation == Qt::Vertical)
-        return section;
-
-    switch(section)
-    {
-    case 0:
-        return trUtf8("Имя");
-    case 1:
-        return trUtf8("Длина, м");
-    case 2:
-        return trUtf8("Дата создания");
-    }
-
-    return QVariant();
-}
-
-QVariant RouteTableModel::data(const QModelIndex &index, int role) const
-{
-    if(!index.isValid() || _routes.count() <= index.row() ||
-        (role != Qt::DisplayRole && role != Qt::EditRole))
-        return QVariant();
-
-    switch(index.column())
-    {
-    case 0:
-        return _routes[index.row()]->name();
-    case 1:
-        return _routes[index.row()]->distance();
-    case 2:
-        return _routes[index.row()]->date();
-    }
-    return QVariant();
-}
-
-bool RouteTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{
-    if(!index.isValid() || role != Qt::EditRole || _routes.count() <= index.row())
-        return false;
-
-    switch(index.column())
-    {
-    case 0:
-        _routes[index.row()]->setName(value.toString());
-        break;
-    default:
-        return false;
-    }
-    emit dataChanged(index, index);
-    return true;
-}
-
-Qt::ItemFlags RouteTableModel::flags(const QModelIndex &index) const
-{
-    Qt::ItemFlags flags = QAbstractTableModel::flags(index);
-    if (index.column() == 0)
-        flags |= Qt::ItemIsEditable;
-    return flags;
-}
-
-PointTableModel *RouteTableModel::currentPointModel() const
-{
-    return _routes[currentIndex]->model().get();
+    return _routes;
 }
 
 void RouteTableModel::recoverRoutes()
@@ -115,7 +44,6 @@ void RouteTableModel::recoverRoutes()
     catch(std::exception &) { }
 }
 
-#include "route_loader.h"
 void RouteTableModel::loadRoutesFromPolyline(const QString &filename)
 {
     shared_ptr<RouteLoader> loader = make_shared<PolylineLoader>();
@@ -133,7 +61,7 @@ void RouteTableModel::loadRoutesFromGPX(const QString &filename)
 void RouteTableModel::addRoute(const shared_ptr<Route> &route)
 {
     _routes.append(route);
-    emit dataChanged(createIndex(_routes.length()-1, 0), createIndex(rowCount()-1, columnCount()-1));
+    emit dataChanged(_routes.length()-1, _routes.length()-1);
 
     currentIndex = _routes.length()-1;
     emit currentRouteChanged(currentIndex);
@@ -147,7 +75,7 @@ void RouteTableModel::addRoute()
 void RouteTableModel::insertRoute(int row, const shared_ptr<Route> &route)
 {
     _routes.insert(row, route);
-    emit dataChanged(createIndex(row, 0), createIndex(rowCount()-1, columnCount()-1));
+    emit dataChanged(row, _routes.length()-1);
 
     currentIndex = row;
     emit currentRouteChanged(currentIndex);
@@ -160,7 +88,7 @@ shared_ptr<Route> RouteTableModel::removeRoute(int row)
 
     shared_ptr<Route> route = _routes.at(row);
     _routes.remove(row);
-    emit dataChanged(createIndex(row, 0), createIndex(rowCount()-1, columnCount()-1));
+    emit dataChanged(row, _routes.length()-1);
 
     if (_routes.length() > 0)
     {
@@ -183,32 +111,65 @@ void RouteTableModel::insertPointToCurrentRoute(int pos, const QGeoCoordinate &p
 {
     shared_ptr<Route> currentRoute = _routes[currentIndex];
     currentRoute->insertPoint(pos, point);
-
-    PointTableModel *pointModel = currentRoute->model().get();
-    emit pointDataChanged(pointModel->index(pos, 0), pointModel->bottomRightIndex());
+    emit pointDataChanged(pos, currentRoute->length()-1);
 }
 
 QGeoCoordinate RouteTableModel::removePointFromCurrentRoute(int pos)
 {
     shared_ptr<Route> currentRoute = _routes[currentIndex];
     QGeoCoordinate point = currentRoute->removePoint(pos);
-
-    PointTableModel *pointModel = currentRoute->model().get();
-    emit pointDataChanged(pointModel->index(pos, 0), pointModel->bottomRightIndex());
-
+    emit pointDataChanged(pos, currentRoute->length()-1);
     return point;
 }
 
-double RouteTableModel::replacePointInCurrentRoute(QModelIndex index, double val)
+QGeoCoordinate RouteTableModel::replacePointInCurrentRoute(int pos, const QGeoCoordinate &point)
 {
-    double oldPoint = _routes[currentIndex]->replacePoint(index, val);
-    emit pointDataChanged(index, index);
+    QGeoCoordinate oldPoint = _routes[currentIndex]->replacePoint(pos, point);
+    emit pointDataChanged(pos, pos);
     return oldPoint;
+}
+
+void RouteTableModel::setCurrentRouteName(const QString &name)
+{
+    _routes[currentIndex]->setName(name);
 }
 
 QString RouteTableModel::currentPolyline()
 {
     return _routes[currentIndex]->polyline();
+}
+
+double RouteTableModel::currentDistance()
+{
+    return _routes[currentIndex]->distance();
+}
+
+const QList<QGeoCoordinate> &RouteTableModel::currentPoints()
+{
+    return _routes[currentIndex]->points();
+}
+
+bool RouteTableModel::altitudeMap(QVector<double> &dist, QVector<double> &alt)
+{
+    dist.clear();
+    alt.clear();
+
+    double currDist = 0;
+    int len = _routes[currentIndex]->length();
+    for (int i = 0; i < len-1; i++)
+    {
+        dist << currDist;
+        QGeoCoordinate point = _routes[currentIndex]->pointAt(i);
+        QGeoCoordinate nextPoint = _routes[currentIndex]->pointAt(i+1);
+        currDist += point.distanceTo(nextPoint) / 1000.;
+        alt << point.altitude();
+    }
+    if (len > 0)
+    {
+        dist << currDist;
+        alt << _routes[currentIndex]->pointAt(len-1).altitude();
+    }
+    return true;
 }
 
 void RouteTableModel::saveRoutes()
@@ -222,12 +183,12 @@ void RouteTableModel::saveRoutes()
     catch (std::exception &) { }
 }
 
-int RouteTableModel::currentRoute()
+int RouteTableModel::currentRouteIndex()
 {
     return currentIndex;
 }
 
-void RouteTableModel::setCurrentRoute(int row)
+void RouteTableModel::setCurrentRouteIndex(int row)
 {
     if (row >=0 && row < _routes.length())
         currentIndex = row;
@@ -238,8 +199,9 @@ void RouteTableModel::setCurrentRoute(int row)
 void RouteTableModel::loadRoutes(shared_ptr<RouteLoader> loader)
 {
     int oldLen = _routes.length();
+
     _routes.append(loader->load());
-    emit dataChanged(createIndex(oldLen, 0), createIndex(rowCount()-1, columnCount()-1));
+    emit dataChanged(oldLen, _routes.length()-1);
 
     currentIndex = _routes.length()-1;
     emit currentRouteChanged(currentIndex);
@@ -261,4 +223,9 @@ bool operator ==(const RouteTableModel &first, const RouteTableModel &second)
         if (*(first._routes[i]) != *(second._routes[i]))
             return false;
     return true;
+}
+
+bool operator !=(const RouteTableModel &first, const RouteTableModel &second)
+{
+    return !(first == second);
 }

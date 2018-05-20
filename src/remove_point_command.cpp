@@ -4,14 +4,14 @@
 RemovePointCommand::RemovePointCommand(int pos, RouteTableModel *model) :
     _pos(pos), _model(model)
 {
-    _route = _model->currentRoute();
+    _route = _model->currentRouteIndex();
 }
 
 int RemovePointCommand::execute()
 {
     try
     {
-        _model->setCurrentRoute(_route);
+        _model->setCurrentRouteIndex(_route);
         _model->currentRouteChanged(_route);
         _point = _model->removePointFromCurrentRoute(_pos);
     }
@@ -24,7 +24,7 @@ int RemovePointCommand::execute()
 
 int RemovePointCommand::unExecute()
 {
-    _model->setCurrentRoute(_route);
+    _model->setCurrentRouteIndex(_route);
     _model->currentRouteChanged(_route);
     AddPointCommand command(_pos, _point, _model);
     command.execute();

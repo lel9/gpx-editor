@@ -1,11 +1,11 @@
 #ifndef ROUTETABLEMODEL_H
 #define ROUTETABLEMODEL_H
 
-#include <QAbstractTableModel>
+#include <QObject>
 #include "route_saver.h"
 #include "route_loader.h"
 
-class  RouteTableModel : public QAbstractTableModel
+class  RouteTableModel : public QObject
 {
     Q_OBJECT
 
@@ -16,17 +16,12 @@ private:
     QString dataPath; // куда сохранять данные после завершения программы
 
 public:
-    RouteTableModel(QObject *parent = 0);
+    RouteTableModel();
     RouteTableModel(const RouteTableModel &model);
     ~RouteTableModel();
 
-    int rowCount(const QModelIndex& parent = QModelIndex()) const;
-    int columnCount(const QModelIndex& parent = QModelIndex()) const;
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
-    bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole);
-    QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-    Qt::ItemFlags flags(const QModelIndex& index) const;
-
+    int routesCount() const;
+    const QVector<shared_ptr<Route>> &routes() const;
 
     void recoverRoutes();
     void saveRoutes();
@@ -42,22 +37,28 @@ public:
     void insertPointToCurrentRoute(int pos);
     void insertPointToCurrentRoute(int pos, const QGeoCoordinate &point);
     QGeoCoordinate removePointFromCurrentRoute(int pos);
-    double replacePointInCurrentRoute(QModelIndex index, double val);
+    QGeoCoordinate replacePointInCurrentRoute(int pos, const QGeoCoordinate &point);
 
+    void setCurrentRouteName(const QString &name);
     QString currentPolyline();
-    PointTableModel *currentPointModel() const;
+    double currentDistance();
+    const QList<QGeoCoordinate> &currentPoints();
 
-    int currentRoute();
-    void setCurrentRoute(int row);
+    bool altitudeMap(QVector<double> &dist, QVector<double> &alt);
+
+    int currentRouteIndex();
+    void setCurrentRouteIndex(int row);
 
 signals:
-    void pointDataChanged(QModelIndex, QModelIndex);
+    void pointDataChanged(int, int);
+    void dataChanged(int, int);
     void currentRouteChanged(int);
 
 public:
     // для тестов
     RouteTableModel& operator =(const RouteTableModel &model);
     friend bool operator ==(const RouteTableModel &first, const RouteTableModel &second);
+    friend bool operator !=(const RouteTableModel &first, const RouteTableModel &second);
 
 private:
     void loadRoutes(shared_ptr<RouteLoader> loader);

@@ -9,43 +9,48 @@ GraphPlot::GraphPlot(QWidget *parent) :
     yAxis->setLabel("Высота, м");
 }
 
-void GraphPlot::updateHigh(const QModelIndex &topLeft,
-                           const QModelIndex &bottomRight,
-                           PointTableModel *model)
+GraphPlot::GraphPlot(const GraphPlot &other) :
+    QCustomPlot()
 {
-    Q_UNUSED(topLeft)
-    Q_UNUSED(bottomRight)
+    graph = this->addGraph();
+    graph->setName(other.graph->name());
+    xAxis->setLabel(other.xAxis->label());
+    yAxis->setLabel(other.yAxis->label());
+    graph->setData(other.graph->data(), true);
+}
 
-    int endRow = model->rowCount();
-    if (endRow == 0)
-        graph->clearData();
-    else
-    {
-        int beginRow = 0;
-        double distance = 0;
-        QGeoCoordinate lastPoint = model->pointAt(beginRow);
-        QVector<double> alt, dist;
-        for (int i = beginRow; i < endRow; i++)
-        {
-            QGeoCoordinate point = model->pointAt(i);
-            alt << point.altitude();
-            distance += lastPoint.distanceTo(point) / 1000.;
-            dist << distance;
-            lastPoint = point;
-        }
-        graph->setData(dist, alt);
-    }
+void GraphPlot::setPlotData(const QVector<double> &keys, const QVector<double> &values)
+{
+    graph->setData(keys, values);
     rescaleAxes();
     replot();
 }
 
+QVector<double> GraphPlot::keys() const
+{
+    QVector<double> res;
+    for (int i = 0; i < graph->data()->values().length(); i++)
+        res << graph->data()->values()[i].key;
+    return res;
+}
+
+QVector<double> GraphPlot::values() const
+{
+    QVector<double> res;
+    for (int i = 0; i < graph->data()->values().length(); i++)
+        res << graph->data()->values()[i].value;
+    return res;
+}
+
 GraphPlot &GraphPlot::operator=(const GraphPlot &other)
 {
-    for (int i = 0; i < other.graphCount(); i++)
-    {
-        addGraph();
-        mGraphs[i]->setData(other.mGraphs[i]->data());
-    }
+    this->clearGraphs();
+
+    graph = this->addGraph();
+    graph->setName(other.graph->name());
+    xAxis->setLabel(other.xAxis->label());
+    yAxis->setLabel(other.yAxis->label());
+    graph->setData(other.graph->data(), true);
     return *this;
 }
 

@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       -= gui
+QT       += positioning
 
 TARGET = Slopes
 TEMPLATE = lib

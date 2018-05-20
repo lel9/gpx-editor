@@ -3,6 +3,7 @@
 
 PointTableModel::PointTableModel(QObject *parent) : QAbstractTableModel(parent)
 {
+    _headers << "Широта" << "Долгота" << "Высота";
 }
 
 int PointTableModel::rowCount(const QModelIndex &parent) const
@@ -90,6 +91,11 @@ Qt::ItemFlags PointTableModel::flags(const QModelIndex &index) const
     return flags |= Qt::ItemIsEditable;
 }
 
+QStringList PointTableModel::headers() const
+{
+    return _headers;
+}
+
 QModelIndex PointTableModel::topLeftIndex() const
 {
     return createIndex(0,0);
@@ -131,6 +137,11 @@ QGeoCoordinate PointTableModel::replacePoint(int row, const QGeoCoordinate &poin
 QGeoCoordinate PointTableModel::pointAt(int pos) const
 {
     return _points[pos];
+}
+
+const QList<QGeoCoordinate> &PointTableModel::points() const
+{
+    return _points;
 }
 
 double PointTableModel::distance() const

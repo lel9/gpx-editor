@@ -5,70 +5,86 @@ TableWidget::TableWidget(QWidget *parent) :
 {  
 }
 
-TableWidget::TableWidget(const TableWidget &other)
+TableWidget::TableWidget(const TableWidget &other) :
+    QTableWidget()
 {
-    int row= other.rowCount();
-    int column = other.colorCount();
+    int row = other.rowCount();
+    int column = other.columnCount();
     this->setRowCount(row);
     this->setColumnCount(column);
 
     for (int i = 0; i < row; i++)
+    {
         for (int j = 0; j < column; j++)
-            this->setItem(i, j, other.item(i, j));
+        {
+            QTableWidgetItem *item = new QTableWidgetItem;
+            item->setData(Qt::DisplayRole, other.item(i, j)->data(Qt::DisplayRole));
+            this->setItem(i, j, item);
+        }
+    }
+
+    this->setSelectionBehavior(other.selectionBehavior());
+    this->setSelectionMode(other.selectionMode());
+    for (auto r : other.selectionModel()->selectedRows())
+        this->selectRow(r.row());
 }
 
 TableWidget::~TableWidget()
 {
 }
 
-void TableWidget::updateModel(const QModelIndex &topLeft,
-                              const QModelIndex &bottomRight,
-                              QAbstractItemModel *model)
+QVariant TableWidget::getData(const TableIndex &index)
 {
-    this->setRowCount(model->rowCount());
-    int column = model->columnCount();
-    this->setColumnCount(column);
-
-    QStringList list;
-    for (int i = 0; i < column; i++)
-        list << model->headerData(i, Qt::Horizontal).toString();
-    this->setHorizontalHeaderLabels(list);
-
-    if (topLeft.isValid() && bottomRight.isValid())
-    {
-        int iBegin = topLeft.row();
-        int iEnd = bottomRight.row();
-        int jBegin = topLeft.column();
-        int jEnd = bottomRight.column();
-
-        for (int i = iBegin; i <= iEnd; i++)
-        {
-            for (int j = jBegin; j <= jEnd; j++)
-            {
-                QTableWidgetItem *item = new QTableWidgetItem;
-                item->setData(Qt::DisplayRole, model->data(model->index(i,j)));
-                this->setItem(i,j,item);
-            }
-        }
-    }
+    if (index.row() >= rowCount() || index.column() >= columnCount())
+        return QVariant();
+    QTableWidgetItem *item = this->item(index.row(), index.column());
+    if (!item)
+        return QVariant();
+    return item->data(Qt::DisplayRole);
 }
 
-QModelIndex TableWidget::index(QTableWidgetItem *item) const
+void TableWidget::setData(const TableIndex &index, const QVariant &data)
 {
-    return indexFromItem(item);
+    int col = index.column();
+    int row = index.row();
+    if (columnCount() <= col)
+        setColumnCount(col + 1);
+    if (rowCount() <= row)
+        setRowCount(row + 1);
+
+    QTableWidgetItem *item = new QTableWidgetItem;
+    item->setData(Qt::DisplayRole, data);
+    setItem(row, col, item);
+}
+
+TableIndex TableWidget::index(QTableWidgetItem *item) const
+{
+    QModelIndex qIndex = indexFromItem(item);
+    return TableIndex(qIndex.row(), qIndex.column());
 }
 
 TableWidget &TableWidget::operator=(const TableWidget &other)
 {
-    int row= other.rowCount();
-    int column = other.colorCount();
+    int row = other.rowCount();
+    int column = other.columnCount();
     this->setRowCount(row);
     this->setColumnCount(column);
-    this->setSelectionModel(other.selectionModel());
 
     for (int i = 0; i < row; i++)
+    {
         for (int j = 0; j < column; j++)
-            this->setItem(i, j, other.item(i, j));
+        {
+            QTableWidgetItem *item = new QTableWidgetItem;
+            item->setData(Qt::DisplayRole, other.item(i,j)->data(Qt::DisplayRole));
+            this->setItem(i, j, item);
+        }
+    }
+
+    this->setSelectionBehavior(other.selectionBehavior());
+    this->setSelectionMode(other.selectionMode());
+    this->clearSelection();
+    for (auto r : other.selectionModel()->selectedRows())
+        this->selectRow(r.row());
 
     return *this;
 }

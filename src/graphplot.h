@@ -10,9 +10,11 @@ private:
     QCPGraph *graph;
 public:
     GraphPlot(QWidget *parent = 0);
-    void updateHigh(const QModelIndex &topLeft,
-                    const QModelIndex &bottomRight,
-                    PointTableModel *model);
+    GraphPlot(const GraphPlot &other);
+
+    void setPlotData(const QVector<double> &keys, const QVector<double> &values);
+    QVector<double> keys() const;
+    QVector<double> values() const;
 
     GraphPlot& operator=(const GraphPlot &other);
 

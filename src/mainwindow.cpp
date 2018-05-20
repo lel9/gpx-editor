@@ -5,7 +5,7 @@
 #include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
-    BaseView(parent),
+    QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -22,12 +22,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->Undo->setEnabled(false);
     ui->Redo->setEnabled(false);
 
-    BaseView::connect(ui->tableOfPoints, SIGNAL(itemChanged(QTableWidgetItem*)),
+    connect(ui->tableOfPoints, SIGNAL(itemChanged(QTableWidgetItem*)),
             this, SLOT(on_pointChanged(QTableWidgetItem*)));
-    BaseView::connect(ui->tableOfRoutes, SIGNAL(itemSelectionChanged()),
+    connect(ui->tableOfRoutes, SIGNAL(itemSelectionChanged()),
             this, SIGNAL(currentRouteChanged()));
 
+    connect(ui->tableOfRoutes, SIGNAL(itemChanged(QTableWidgetItem*)),
+            this, SLOT(on_routeChanged(QTableWidgetItem*)));
+
     presenter = new Presenter(this);
+    presenter->recoverRoutes();
 }
 
 MainWindow::~MainWindow()
@@ -37,38 +41,75 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-TableWidget *MainWindow::routeView() const
+int MainWindow::selectedRouteRow() const
 {
-    return ui->tableOfRoutes;
+    QModelIndexList rows = ui->tableOfRoutes->selectionModel()->selectedRows();
+    if (!rows.isEmpty())
+        return rows[0].row();
+    return -1;
 }
 
-TableWidget *MainWindow::pointView() const
+int MainWindow::selectedPointRow() const
 {
-    return ui->tableOfPoints;
+    QModelIndexList rows = ui->tableOfPoints->selectionModel()->selectedRows();
+    if (!rows.isEmpty())
+        return rows[0].row();
+    return -1;
 }
 
-GraphPlot *MainWindow::graphPlot() const
+QString MainWindow::polyline() const
 {
-    return ui->graphPlot;
+    return ui->textEditPolyline->toPlainText();
 }
 
-QTextEdit *MainWindow::polylineEdit() const
+QVariant MainWindow::routeData(const TableIndex &index) const
 {
-    return ui->textEditPolyline;
+    return ui->tableOfRoutes->getData(index);
 }
 
-QModelIndexList MainWindow::selectedRouteRows() const
+QVariant MainWindow::pointData(const TableIndex &index) const
 {
-    return ui->tableOfRoutes->selectionModel()->selectedRows();
+    return ui->tableOfPoints->getData(index);
 }
 
-QModelIndexList MainWindow::selectedPointRows() const
+int MainWindow::routeViewRow() const
 {
-    return ui->tableOfPoints->selectionModel()->selectedRows();
+    return ui->tableOfRoutes->rowCount();
+}
+
+int MainWindow::pointViewRow() const
+{
+    return ui->tableOfPoints->rowCount();
+}
+
+int MainWindow::routeViewColumn() const
+{
+    return ui->tableOfRoutes->columnCount();
+}
+
+int MainWindow::pointViewColumn() const
+{
+    return ui->tableOfPoints->columnCount();
+}
+
+QVector<double> MainWindow::plotKeys() const
+{
+    return ui->graphPlot->keys();
+}
+
+QVector<double> MainWindow::plotValues() const
+{
+    return ui->graphPlot->values();
+}
+
+BaseView *MainWindow::copy()
+{
+    return nullptr;
 }
 
 void MainWindow::selectRoute(int row)
 {
+    ui->tableOfRoutes->clearSelection();
     ui->tableOfRoutes->selectRow(row);
 }
 
@@ -77,28 +118,78 @@ void MainWindow::setPolyline(const QString &polyline)
     ui->textEditPolyline->setText(polyline);
 }
 
-void MainWindow::updateRouteView(const QModelIndex &topLeft, const QModelIndex &bottomRight, RouteTableModel *model)
+void MainWindow::setRouteViewSize(int rowCount, int columnCount)
 {
-    ui->tableOfRoutes->updateModel(topLeft, bottomRight, model);
+    ui->tableOfRoutes->setRowCount(rowCount);
+    ui->tableOfRoutes->setColumnCount(columnCount);
 }
 
-void MainWindow::updatePointView(const QModelIndex &topLeft,
-                                 const QModelIndex &bottomRight,
-                                 PointTableModel *model)
+void MainWindow::setPointViewSize(int rowCount, int columnCount)
+{
+    ui->tableOfPoints->setRowCount(rowCount);
+    ui->tableOfPoints->setColumnCount(columnCount);
+}
+
+void MainWindow::setRouteViewHeaders(const QStringList &header)
+{
+    ui->tableOfRoutes->setHorizontalHeaderLabels(header);
+}
+
+void MainWindow::setPointViewHeaders(const QStringList &header)
+{
+    ui->tableOfPoints->setHorizontalHeaderLabels(header);
+}
+
+void MainWindow::updateRouteView(const TableIndex &index, const QVariant &data)
+{
+    disconnect(ui->tableOfRoutes, SIGNAL(itemChanged(QTableWidgetItem*)),
+            this, SLOT(on_routeChanged(QTableWidgetItem*)));
+
+    ui->tableOfRoutes->setData(index, data);
+
+    connect(ui->tableOfRoutes, SIGNAL(itemChanged(QTableWidgetItem*)),
+            this, SLOT(on_routeChanged(QTableWidgetItem*)));
+}
+
+void MainWindow::updatePointView(const TableIndex &index, const QVariant &data)
 {
     disconnect(ui->tableOfPoints, SIGNAL(itemChanged(QTableWidgetItem*)),
             this, SLOT(on_pointChanged(QTableWidgetItem*)));
 
-    ui->tableOfPoints->updateModel(topLeft, bottomRight, model);
-    ui->graphPlot->updateHigh(topLeft, bottomRight, model);
+    ui->tableOfPoints->setData(index, data);
 
     connect(ui->tableOfPoints, SIGNAL(itemChanged(QTableWidgetItem*)),
             this, SLOT(on_pointChanged(QTableWidgetItem*)));
 }
 
+void MainWindow::setPlotData(const QVector<double> &keys, const QVector<double> &values)
+{
+    ui->graphPlot->setPlotData(keys, values);
+}
+
 void MainWindow::showErrorMessage(const QString &message)
 {
     QMessageBox::warning(this, "Ошибка", message);
+}
+
+void MainWindow::setOperationResult(const QString &result)
+{
+    ui->operationResult->setText(result);
+}
+
+void MainWindow::addOperation(const QString &name)
+{
+    ui->operationList->addItem(name);
+}
+
+void MainWindow::removeOperation(int index)
+{
+    ui->operationList->removeItem(index);
+}
+
+void MainWindow::closeEvent(QCloseEvent *)
+{
+    presenter->saveRoutes();
 }
 
 void MainWindow::setUndoEnabled(bool enable)
@@ -113,53 +204,64 @@ void MainWindow::setRedoEnabled(bool enable)
 
 void MainWindow::on_pointChanged(QTableWidgetItem *item)
 {
-    emit pointChanged(ui->tableOfPoints->index(item), item->text().toDouble());
+    presenter->on_pointChanged(ui->tableOfPoints->index(item), item->text().toDouble());
+}
+
+void MainWindow::on_routeChanged(QTableWidgetItem *item)
+{
+    if (item->column() == 0)
+        presenter->on_routeNameChanged(item->text());
 }
 
 void MainWindow::on_actionImportGPX_triggered()
 {
     //"E://PPO//route_crimea.gpx";
     QString filename = QFileDialog::getOpenFileName(this, tr("Открытие файла"), QDir::currentPath(), "*.gpx");
-    emit importFromGPX(filename);
+    presenter->on_importFromGPX(filename);
 }
 
 void MainWindow::on_actionImportPolyline_triggered()
 {
     QString filename = QFileDialog::getOpenFileName(this, tr("Открытие файла"), QDir::currentPath(), "*.txt");
-    emit importFromPolyline(filename);
+    presenter->on_importFromPolyline(filename);
 }
 
 void MainWindow::on_actionAddRoute_triggered()
 {
-    emit addRoute();
+    presenter->on_addRoute();
 }
 
 void MainWindow::on_actionDeleteRoute_triggered()
 {
-    emit deleteRoute();
+    presenter->on_deleteRoute();
 }
 
 void MainWindow::on_Undo_triggered()
 {
-    emit undo();
+    presenter->on_undo();
 }
 
 void MainWindow::on_Redo_triggered()
 {
-    emit redo();
+    presenter->on_redo();
 }
 
 void MainWindow::on_actionInsertPointBefore_triggered()
 {
-    emit insertPoint(Before);
+    presenter->on_insertPoint(Before);
 }
 
 void MainWindow::on_actionDeletePoint_triggered()
 {
-    emit deletePoint();
+    presenter->on_deletePoint();
 }
 
 void MainWindow::on_actionInsertPointAfter_triggered()
 {
-    emit insertPoint(After);
+    presenter->on_insertPoint(After);
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    presenter->executeOperaton(ui->operationList->currentIndex());
 }

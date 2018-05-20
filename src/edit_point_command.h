@@ -3,18 +3,19 @@
 
 #include "command.h"
 #include "route_table_model.h"
+#include "table_index.h"
 
 class EditPointCommand : public Command
 {
 private:
-    QModelIndex _index;
-    double _val;
-    double _oldVal;
+    int _pos;
+    QGeoCoordinate _point;
+    QGeoCoordinate _oldPoint;
     int _route;
     RouteTableModel *_model;
 
 public:
-    EditPointCommand(QModelIndex index, double val, RouteTableModel *model);
+    EditPointCommand(const TableIndex &index, double val, RouteTableModel *model);
     ~EditPointCommand() = default;
 
     virtual int execute() override;

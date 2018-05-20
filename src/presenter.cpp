@@ -6,30 +6,49 @@
 #include "remove_point_command.h"
 #include "edit_point_command.h"
 
+#include "model_index_iterator.h"
+
 Presenter::Presenter(BaseView *view) :
     view(view)
 {
     model = new RouteTableModel;
+    setHeaders();
     initConnections();
-    model->recoverRoutes();
+    visitorManager.manage();
 }
 
 Presenter::Presenter(BaseView *view, RouteTableModel *model) :
     model(model), view(view)
 {
+    setHeaders();
     initConnections();
+    visitorManager.manage();
 }
 
-Presenter::Presenter(const Presenter &other)
+Presenter::Presenter(const Presenter &other) :
+    QObject()
 {
+    model = new RouteTableModel;
     *model = *(other.model);
-    view = (other.view);
+    view = other.view->copy();
+    setHeaders();
+    initConnections();
+    visitorManager.manage();
 }
 
 Presenter::~Presenter()
 {
-    model->saveRoutes();
     delete model;
+}
+
+void Presenter::recoverRoutes()
+{
+    model->recoverRoutes();
+}
+
+void Presenter::saveRoutes()
+{
+    model->saveRoutes();
 }
 
 void Presenter::on_importFromGPX(QString filename)
@@ -64,63 +83,80 @@ void Presenter::on_importFromPolyline(QString filename)
 
 void Presenter::on_addRoute()
 {
-    executeCommand(new AddRouteCommand(model));
+    commandManager.addCommand(new AddRouteCommand(model));
 }
 
 void Presenter::on_deleteRoute()
 {
-    QModelIndexList rows = view->selectedRouteRows();
-    if (!rows.isEmpty())
-        executeCommand(new RemoveRouteCommand(rows[0].row(), model));
+    int row = view->selectedRouteRow();
+    commandManager.addCommand(new RemoveRouteCommand(row, model));
+}
+
+void Presenter::on_routeNameChanged(const QString &name)
+{
+    model->setCurrentRouteName(name);
 }
 
 void Presenter::on_currentRouteChanged()
 {
-    if (!view->selectedRouteRows().isEmpty())
+    int index = view->selectedRouteRow();
+    if (index >= 0)
     {
-        int index = view->selectedRouteRows()[0].row();
-        model->setCurrentRoute(index);
-        PointTableModel *pModel = model->currentPointModel();
-        view->updatePointView(pModel->topLeftIndex(), pModel->bottomRightIndex(), pModel);
+        model->setCurrentRouteIndex(index);
+
+        const QList<QGeoCoordinate> &points = model->currentPoints();
+        updatePointView(points);
+        updatePlotData();
+
         try
         {
             view->setPolyline(model->currentPolyline());
         }
-        catch(std::exception &) { }
+        catch(std::exception &ex)
+        {
+            view->showErrorMessage(ex.what());
+        }
     }
+}
+
+void Presenter::addOperation(Visitor *visitor)
+{
+    view->addOperation(visitor->operationName());
 }
 
 void Presenter::on_insertPoint(InsertPointPos pos)
 {
-    if (!view->selectedRouteRows().isEmpty())
+    int selectedRoute = view->selectedRouteRow();
+    int selectedPoint = view->selectedPointRow();
+    if (selectedRoute >= 0)
     {
-        if (!view->selectedPointRows().isEmpty())
+        if (selectedPoint >= 0)
         {
-            int row = view->selectedPointRows()[0].row() + pos;
-            executeCommand(new AddPointCommand(row, model));
+            int row = view->selectedPointRow() + pos;
+            commandManager.addCommand(new AddPointCommand(row, model));
         }
-        else if (model->currentPointModel()->rowCount() == 0)
-            executeCommand(new AddPointCommand(0, model));
+        else if (model->currentPoints().isEmpty())
+            commandManager.addCommand(new AddPointCommand(0, model));
     }
 }
 
 void Presenter::on_deletePoint()
 {
-    if (!view->selectedRouteRows().isEmpty() && !view->selectedPointRows().isEmpty())
-    {
-        int row = view->selectedPointRows()[0].row();
-        executeCommand(new RemovePointCommand(row, model));
-    }
+    int selectedRoute = view->selectedRouteRow();
+    int selectedPoint = view->selectedPointRow();
+    if (selectedRoute >= 0 && selectedPoint >= 0)
+        commandManager.addCommand(new RemovePointCommand(selectedPoint, model));
 }
 
-void Presenter::on_pointChanged(QModelIndex index, double val)
+void Presenter::on_pointChanged(const TableIndex &index, double val)
 {
-    executeCommand(new EditPointCommand(index, val, model));
+    commandManager.addCommand(new EditPointCommand(index, val, model));
 }
 
-void Presenter::on_pointDataChanged(QModelIndex topLeft, QModelIndex bottomRight)
+void Presenter::on_pointDataChanged(int topLeft, int bottomRight)
 {
-    view->updatePointView(topLeft, bottomRight, model->currentPointModel());
+    updatePointView(model->currentPoints(), topLeft, bottomRight);
+    double dist = updatePlotData();
 
     try
     {
@@ -130,77 +166,97 @@ void Presenter::on_pointDataChanged(QModelIndex topLeft, QModelIndex bottomRight
     {
         view->showErrorMessage(ex.what());
     }
-    QModelIndex routeIndex = model->index(model->currentRoute(), 1);
-    view->updateRouteView(routeIndex, routeIndex, model); // длина
+
+    TableIndex routeIndex(model->currentRouteIndex(), 1);
+    view->updateRouteView(routeIndex, dist); // длина
 }
 
 void Presenter::on_redo()
 {
-    Command *command = commandRedoStack.pop();
-    if (command->execute() == 0)
-    {
-        commandUndoStack.push(command);
-        view->setUndoEnabled(true);
-        if (commandRedoStack.isEmpty())
-            view->setRedoEnabled(false);
-    }
+    commandManager.redoCommand();
 }
 
 void Presenter::on_undo()
 {
-    Command *command = commandUndoStack.pop();
-    if (command->unExecute() == 0)
-    {
-        commandRedoStack.push(command);
-        view->setRedoEnabled(true);
-        if (commandUndoStack.isEmpty())
-            view->setUndoEnabled(false);
-    }
+    commandManager.undoCommand();
 }
 
-void Presenter::on_routesChanged(QModelIndex topLeft, QModelIndex bottomRight)
+void Presenter::executeOperaton(int operationIndex)
 {
-    view->updateRouteView(topLeft, bottomRight, model);
+    view->setOperationResult(visitorManager.accept(model->currentPoints(), operationIndex));
 }
 
-void Presenter::executeCommand(Command *command)
+void Presenter::on_routesChanged(int topLeft, int bottomRight)
 {
-    if (command->execute() == 0)
+    updateRouteView(topLeft, bottomRight);
+}
+
+void Presenter::updatePointView(const QList<QGeoCoordinate> &points)
+{
+    updatePointView(points, 0, points.length()-1);
+}
+
+void Presenter::updatePointView(const QList<QGeoCoordinate> &points, int topLeft, int bottomRight)
+{
+    int rowsCount = points.length();
+    view->setPointViewSize(rowsCount, 3);
+    if (topLeft >= 0 && bottomRight < rowsCount)
     {
-        commandUndoStack.push(command);
-        view->setUndoEnabled(true);
+        for (int row = topLeft; row <= bottomRight; row++)
+        {
+            view->updatePointView(TableIndex(row, 0), points[row].latitude());
+            view->updatePointView(TableIndex(row, 1), points[row].longitude());
+            view->updatePointView(TableIndex(row, 2), points[row].altitude());
+        }
     }
+    view->setPointViewHeaders(pointHeaders);
+}
+
+void Presenter::updateRouteView(int topLeft, int bottomRight)
+{
+    const QVector<shared_ptr<Route>> &routes = model->routes();
+    view->setRouteViewSize(routes.length(), 3);
+    if (topLeft >= 0 && bottomRight < routes.length())
+    {
+        for (int row = topLeft; row <= bottomRight; row++)
+        {
+            view->updateRouteView(TableIndex(row, 0), routes[row]->name());
+            view->updateRouteView(TableIndex(row, 1), routes[row]->distance());
+            view->updateRouteView(TableIndex(row, 2), routes[row]->date());
+        }
+    }
+    view->setRouteViewHeaders(routeHeaders);
+}
+
+double Presenter::updatePlotData()
+{
+    QVector<double> keys, values;
+    model->altitudeMap(keys, values);
+    view->setPlotData(keys, values);
+    if (!keys.isEmpty())
+        return keys.last();
+    return 0;
 }
 
 void Presenter::initConnections()
 {
-    connect(view, SIGNAL(importFromGPX(QString)),
-            this, SLOT(on_importFromGPX(QString)));
-    connect(view, SIGNAL(importFromPolyline(QString)),
-            this, SLOT(on_importFromPolyline(QString)));
-    connect(view, SIGNAL(addRoute()),
-            this, SLOT(on_addRoute()));
-    connect(view, SIGNAL(deleteRoute()),
-            this, SLOT(on_deleteRoute()));
-    connect(view, SIGNAL(insertPoint(InsertPointPos)),
-            this, SLOT(on_insertPoint(InsertPointPos)));
-    connect(view, SIGNAL(deletePoint()),
-            this, SLOT(on_deletePoint()));
-    connect(view, SIGNAL(pointChanged(QModelIndex,double)),
-            this, SLOT(on_pointChanged(QModelIndex,double)));
-    connect(view, SIGNAL(currentRouteChanged()),
-            this, SLOT(on_currentRouteChanged()));
+    QObject *objView = dynamic_cast<QObject*>(view);
 
-    connect(view, SIGNAL(redo()),
-            this, SLOT(on_redo()));
-    connect(view, SIGNAL(undo()),
-            this, SLOT(on_undo()));
+    connect(objView, SIGNAL(currentRouteChanged()), this, SLOT(on_currentRouteChanged()));
 
-    connect(model, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)),
-            this, SLOT(on_routesChanged(QModelIndex,QModelIndex)));
-    connect(model, SIGNAL(pointDataChanged(QModelIndex,QModelIndex)),
-            this, SLOT(on_pointDataChanged(QModelIndex,QModelIndex)));
-    connect(model, SIGNAL(currentRouteChanged(int)),
-            view, SLOT(selectRoute(int)));
+    connect(model, SIGNAL(dataChanged(int,int)), this, SLOT(on_routesChanged(int,int)));
+    connect(model, SIGNAL(pointDataChanged(int, int)), this, SLOT(on_pointDataChanged(int, int)));
+    connect(model, SIGNAL(currentRouteChanged(int)), objView, SLOT(selectRoute(int)));
+
+    connect(&commandManager, SIGNAL(redoStackIsNotEmpty(bool)), objView, SLOT(setRedoEnabled(bool)));
+    connect(&commandManager, SIGNAL(undoStackIsNotEmpty(bool)), objView, SLOT(setUndoEnabled(bool)));
+
+    connect(&visitorManager, SIGNAL(addVisitor(Visitor*)), this, SLOT(addOperation(Visitor*)));
+}
+
+void Presenter::setHeaders()
+{
+    routeHeaders << "Имя" << "Длина, м" << "Дата создания";
+    pointHeaders << "Широта" << "Долгота" << "Высота";
 }
 

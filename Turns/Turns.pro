@@ -5,6 +5,8 @@
 #-------------------------------------------------
 
 QT       -= gui
+QT       += positioning
+CONFIG += c++14
 
 TARGET = Turns
 TEMPLATE = lib

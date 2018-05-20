@@ -22,7 +22,6 @@ SOURCES += main.cpp\
     converter.cpp \
     edit_point_command.cpp \
     exceptions.cpp \
-    point_table_model.cpp \
     remove_point_command.cpp \
     remove_route_command.cpp \
     route.cpp \
@@ -31,10 +30,12 @@ SOURCES += main.cpp\
     table_point_item_delegate.cpp \
     route_saver.cpp \
     presenter.cpp \
-    baseview.cpp \
     tablewidget.cpp \
     graphplot.cpp \
-    qcustomplot/qcustomplot.cpp
+    qcustomplot/qcustomplot.cpp \
+    command_manager.cpp \
+    table_index.cpp \
+    visitor_manager.cpp
 
 HEADERS  += mainwindow.h \
     add_point_command.h \
@@ -43,7 +44,6 @@ HEADERS  += mainwindow.h \
     converter.h \
     edit_point_command.h \
     exceptions.h \
-    point_table_model.h \
     remove_point_command.h \
     remove_route_command.h \
     route.h \
@@ -56,6 +56,10 @@ HEADERS  += mainwindow.h \
     enum_insert_point.h \
     tablewidget.h \
     graphplot.h \
-    qcustomplot/qcustomplot.h
+    qcustomplot/qcustomplot.h \
+    command_manager.h \
+    visitor.h \
+    table_index.h \
+    visitor_manager.h
 
 FORMS    += mainwindow.ui

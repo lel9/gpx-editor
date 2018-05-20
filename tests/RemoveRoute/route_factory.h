@@ -1,12 +1,14 @@
-#ifndef RANDOMROUTEFACTORY_H
-#define RANDOMROUTEFACTORY_H
+#ifndef ROUTEFACTORY_H
+#define ROUTEFACTORY_H
 
 #include "../../src/route.h"
-class RandomRouteFactory
+#include "../../tests/data_struct.h"
+
+class RouteFactory
 {
 public:
-    RandomRouteFactory();
-    static shared_ptr<Route> create(int pointCount);
+    RouteFactory();
+    static shared_ptr<Route> create(const RouteData &data);
 };
 
-#endif // RANDOMROUTEFACTORY_H
+#endif // ROUTEFACTORY_H

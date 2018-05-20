@@ -20,13 +20,11 @@ SOURCES += tst_remove_route_test.cpp \
     ../../src/point_table_model.cpp \
     ../../src/route.cpp \
     ../../src/route_table_model.cpp \
-    random_route_factory.cpp \
     ../../src/converter.cpp \
     ../../src/route_loader.cpp \
     ../../src/route_saver.cpp \
     ../testview.cpp \
     ../../src/presenter.cpp \
-    ../../src/baseview.cpp \
     ../../src/graphplot.cpp \
     ../../src/tablewidget.cpp \
     ../../src/add_point_command.cpp \
@@ -34,7 +32,11 @@ SOURCES += tst_remove_route_test.cpp \
     ../../src/edit_point_command.cpp \
     ../../src/remove_point_command.cpp \
     ../../src/remove_route_command.cpp \
-    ../../src/qcustomplot/qcustomplot.cpp
+    ../../src/qcustomplot/qcustomplot.cpp \
+    route_factory.cpp \
+    ../data_struct.cpp \
+    ../../src/command_manager.cpp \
+    ../../src/model_index_iterator.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 HEADERS += \
@@ -42,7 +44,6 @@ HEADERS += \
     ../../src/point_table_model.h \
     ../../src/route.h \
     ../../src/route_table_model.h \
-    random_route_factory.h \
     ../../src/converter.h \
     ../../src/route_loader.h \
     ../../src/route_saver.h \
@@ -56,4 +57,8 @@ HEADERS += \
     ../../src/edit_point_command.h \
     ../../src/remove_point_command.h \
     ../../src/remove_route_command.h \
-    ../../src/qcustomplot/qcustomplot.h
+    ../../src/qcustomplot/qcustomplot.h \
+    ../data_struct.h \
+    route_factory.h \
+    ../../src/command_manager.h \
+    ../../src/model_index_iterator.h

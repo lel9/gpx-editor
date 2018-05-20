@@ -1,18 +1,32 @@
 #include "edit_point_command.h"
 
-EditPointCommand::EditPointCommand(QModelIndex index, double val, RouteTableModel *model) :
-    _index(index), _val(val), _model(model)
+EditPointCommand::EditPointCommand(const TableIndex &index, double val, RouteTableModel *model) :
+    _model(model)
 {
-    _route = _model->currentRoute();
+    _pos = index.row();
+    _route = _model->currentRouteIndex();
+    _point = _model->currentPoints()[_pos];
+    switch (index.column())
+    {
+    case 0:
+        _point.setLatitude(val);
+        break;
+    case 1:
+        _point.setLongitude(val);
+        break;
+    case 2:
+        _point.setAltitude(val);
+        break;
+    }
 }
 
 int EditPointCommand::execute()
 {
     try
     {
-        _model->setCurrentRoute(_route);
-        _model->currentRouteChanged(_route);
-        _oldVal = _model->replacePointInCurrentRoute(_index, _val);
+        _model->setCurrentRouteIndex(_route);
+        //_model->currentRouteChanged(_route);
+        _oldPoint = _model->replacePointInCurrentRoute(_pos, _point);
     }
     catch (std::exception &)
     {
@@ -26,9 +40,9 @@ int EditPointCommand::unExecute()
 {
     try
     {
-        _model->setCurrentRoute(_route);
-        _model->currentRouteChanged(_route);
-        _model->replacePointInCurrentRoute(_index, _oldVal);
+        _model->setCurrentRouteIndex(_route);
+        //_model->currentRouteChanged(_route);
+        _model->replacePointInCurrentRoute(_pos, _oldPoint);
     }
     catch (std::exception &)
     {

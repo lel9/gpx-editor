@@ -5,20 +5,16 @@
 #include "../../src/exceptions.h"
 #include "../../src/presenter.h"
 #include "../testview.h"
-#include "random_route_factory.h"
+#include "route_factory.h"
 
 Q_DECLARE_METATYPE(shared_ptr<Route>)
 Q_DECLARE_METATYPE(RouteTableModel)
 Q_DECLARE_METATYPE(Presenter)
 Q_DECLARE_METATYPE(TestView)
 
-#define ROUTES_COUNT 5
-#define POINTS_COUNT 5
-
 class RemoveRouteTest : public QObject
 {
     Q_OBJECT
-
 public:
     RemoveRouteTest();
 
@@ -31,8 +27,8 @@ private Q_SLOTS:
     void testCase2();
 
 private:
-    void test1(int index);
-    void test2(int index);
+    void test1(int index, int routeCount);
+    void test2(int index, int routeCount);
 };
 
 RemoveRouteTest::RemoveRouteTest()
@@ -41,89 +37,112 @@ RemoveRouteTest::RemoveRouteTest()
 
 void RemoveRouteTest::testCase1_data()
 {
-    QTest::addColumn<Presenter>("presenter");
-    QTest::addColumn<RouteTableModel>("model");
-    QTest::addColumn<TestView>("view");
+    QTest::addColumn<Presenter*>("presenter");
+    QTest::addColumn<RouteTableModel*>("model");
+    QTest::addColumn<TestView*>("view");
     QTest::addColumn<int>("index");
-    QTest::addColumn<RouteTableModel>("resModel");
-    QTest::addColumn<TestView>("resView");
+    QTest::addColumn<RouteTableModel*>("resModel");
+    QTest::addColumn<TestView*>("resView");
 
-    for (int i = 0; i < ROUTES_COUNT; i++)
-        test1(i);
+    test1(0, 5);
+    test1(0, 1);
+    test1(3, 5);
+    test1(4, 5);
 }
 
 void RemoveRouteTest::testCase1()
 {
-    QFETCH(Presenter, presenter);
-    QFETCH(RouteTableModel, model);
-    QFETCH(TestView, view);
+    QFETCH(Presenter*, presenter);
+    QFETCH(RouteTableModel*, model);
+    QFETCH(TestView*, view);
     QFETCH(int, index);
-    QFETCH(RouteTableModel, resModel);
-    QFETCH(TestView, resView);
+    QFETCH(RouteTableModel*, resModel);
+    QFETCH(TestView*, resView);
 
-    view.selectRoute(index);
-    view.deleteRoute();
+    view->selectRoute(index);
+    presenter->on_deleteRoute();
 
-    QCOMPARE(model, resModel);
-    QCOMPARE(view, resView);
+    QCOMPARE(*model, *resModel);
+    QCOMPARE(*view, *resView);
 }
 
 void RemoveRouteTest::testCase2_data()
 {
-//    QTest::addColumn<RouteTableModel>("data");
-//    QTest::addColumn<int>("index");
+    QTest::addColumn<Presenter*>("presenter");
+    QTest::addColumn<RouteTableModel*>("model");
+    QTest::addColumn<TestView*>("view");
+    QTest::addColumn<int>("index");
 
-//    test2(-1);
-//    test2(ROUTES_COUNT);
+    test2(-1, 5);
+    test2(5, 5);
 }
 
 void RemoveRouteTest::testCase2()
 {
-//    QFETCH(RouteTableModel, data);
-//    QFETCH(int, index);
-//    QVERIFY_EXCEPTION_THROWN(data.removeRoute(index), std::out_of_range);
+    QFETCH(Presenter*, presenter);
+    QFETCH(RouteTableModel*, model);
+    QFETCH(TestView*, view);
+    QFETCH(int, index);
+
+    view->selectRoute(index);
+    presenter->on_deleteRoute();
+
+    QVERIFY_EXCEPTION_THROWN(model->removeRoute(index), std::out_of_range);
 }
 
-void RemoveRouteTest::test1(int index)
+void RemoveRouteTest::test1(int index, int routeCount)
 {
-    RouteTableModel model, resModel;
-    char **r = nullptr;
-    int j = 0;
-    QApplication app(j, r);
-    TestView view, resView;
-    Presenter presenter(&view, &model);
+    RouteTableModel *model = new RouteTableModel;
+    RouteTableModel *resModel = new RouteTableModel;
+    QVector<RouteData> routeData, resRouteData;
 
-    for (int i = 0; i < ROUTES_COUNT; i++)
+    for (int i = 0; i < routeCount; i++)
     {
-        shared_ptr<Route> route = RandomRouteFactory::create(POINTS_COUNT);
-        model.addRoute(route);
+        RouteData data {"route" + QString::number(i+1), i*10., QDate(2018, 4, i+1)};
+        routeData << data;
+
+        shared_ptr<Route> route = RouteFactory::create(data);
+        model->addRoute(route);
         if (i != index)
-            resModel.addRoute(route);
+        {
+            resModel->addRoute(route);
+            resRouteData << data;
+        }
     }
 
-    view.setRouteView(&model);
-    resView.setRouteView(&resModel);
+    TestView *view = new TestView(routeData, QVector<PointData>());
+    TestView *resView = new TestView(resRouteData, QVector<PointData>());
 
-    if (index == ROUTES_COUNT-1)
-        resModel.setCurrentRoute(index-1);
+    if (index < model->rowCount()-1)
+        resView->selectRoute(index);
     else
-        resModel.setCurrentRoute(index);
+        resView->selectRoute(index-1);
 
-    resView.selectRoute(resModel.currentRoute());
-    resView.setPointView(resModel.currentPointModel());
-    resView.setPolyline(resModel.currentPolyline());
+    Presenter *presenter = new Presenter(view, model);
 
-    char *testNumber = QString::number(index).toUtf8().data();
-    QTest::newRow(testNumber) << presenter << model << view << index << resModel << resView;
+    char *t = (QString::number(index) + ", " + QString::number(routeCount)).toUtf8().data();
+    QTest::newRow(t) << presenter << model << view << index << resModel << resView;
 }
 
-void RemoveRouteTest::test2(int index)
+void RemoveRouteTest::test2(int index, int routeCount)
 {
-//    RouteTableModel mdata;
-//    for (int i = 0; i < ROUTES_COUNT; i++)
-//        mdata.addRoute(RandomRouteFactory::create(POINTS_COUNT));
+    RouteTableModel *model = new RouteTableModel;
+    QVector<RouteData> routeData;
 
-//    QTest::newRow(QString::number(index).toUtf8().data()) << mdata << index;
+    for (int i = 0; i < routeCount; i++)
+    {
+        RouteData data {"route" + QString::number(i+1), i*10., QDate(2018, 4, i+1)};
+        routeData << data;
+
+        shared_ptr<Route> route = RouteFactory::create(data);
+        model->addRoute(route);
+    }
+
+    TestView *view = new TestView(routeData, QVector<PointData>());
+    Presenter *presenter = new Presenter(view, model);
+
+    char *t = (QString::number(index) + ", " + QString::number(routeCount)).toUtf8().data();
+    QTest::newRow(t) << presenter << model << view << index;
 }
 
 QTEST_APPLESS_MAIN(RemoveRouteTest)

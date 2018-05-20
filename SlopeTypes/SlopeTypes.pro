@@ -5,6 +5,8 @@
 #-------------------------------------------------
 
 QT       -= gui
+QT       += positioning
+CONFIG   += C++14
 
 TARGET = SlopeTypes
 TEMPLATE = lib

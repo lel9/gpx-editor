@@ -3,7 +3,8 @@
 
 #include "route_table_model.h"
 #include "baseview.h"
-#include "command.h"
+#include "command_manager.h"
+#include "visitor_manager.h"
 
 #include <QStack>
 
@@ -14,9 +15,11 @@ class Presenter : public QObject
 private:
     RouteTableModel *model;
     BaseView *view;
+    CommandManager commandManager;
+    VisitorManager visitorManager;
 
-    QStack<Command*> commandUndoStack;
-    QStack<Command*> commandRedoStack;
+    QStringList routeHeaders;
+    QStringList pointHeaders;
 
 public:
     Presenter() { }
@@ -25,27 +28,39 @@ public:
     Presenter(const Presenter &other);
     ~Presenter();
 
-public slots:
+    void recoverRoutes();
+    void saveRoutes();
     void on_importFromGPX(QString filename);
     void on_importFromPolyline(QString filename);
 
     void on_addRoute();
     void on_deleteRoute();
-
-    void on_currentRouteChanged();
-    void on_routesChanged(QModelIndex topLeft, QModelIndex bottomRight);
+    void on_routeNameChanged(const QString &name);
 
     void on_insertPoint(InsertPointPos pos);
     void on_deletePoint();
-    void on_pointChanged(QModelIndex index, double val);
-    void on_pointDataChanged(QModelIndex topLeft, QModelIndex bottomRight);
+    void on_pointChanged(const TableIndex &index, double val);
 
     void on_redo();
     void on_undo();
 
+    void executeOperaton(int operationIndex);
+
+private slots:
+    void on_pointDataChanged(int topLeft, int bottomRight);
+    void on_routesChanged(int topLeft, int bottomRight);
+    void on_currentRouteChanged();
+
+    void addOperation(Visitor *visitor);
+
 private:
-    void executeCommand(Command *command);
+    void updatePointView(const QList<QGeoCoordinate> &points);
+    void updatePointView(const QList<QGeoCoordinate> &points,
+                         int topLeft, int bottomRight);
+    void updateRouteView(int topLeft, int bottomRight);
+    double updatePlotData();
     void initConnections();
+    void setHeaders();
 };
 
 #endif // PRESENTER_H
