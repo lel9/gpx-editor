@@ -1,0 +1,12 @@
+#ifndef SLOPETYPES_GLOBAL_H
+#define SLOPETYPES_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(SLOPETYPES_LIBRARY)
+#  define SLOPETYPESSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define SLOPETYPESSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // SLOPETYPES_GLOBAL_H

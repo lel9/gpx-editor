@@ -1,0 +1,12 @@
+#ifndef FINDTURNS_GLOBAL_H
+#define FINDTURNS_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(FINDTURNS_LIBRARY)
+#  define FINDTURNSSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define FINDTURNSSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // FINDTURNS_GLOBAL_H
