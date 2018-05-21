@@ -2,7 +2,7 @@
 #include "remove_point_command.h"
 
 AddPointCommand::AddPointCommand(int pos, RouteTableModel *model) :
-    _pos(pos), _point(0, 0), _model(model)
+    _pos(pos), _point(0, 0, 0), _model(model)
 {
     _route = _model->currentRouteIndex();
 }

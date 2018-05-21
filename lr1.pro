@@ -4,4 +4,5 @@ SUBDIRS += \
     src \
     Turns \
     Slopes \
-    SlopeTypes
+    SlopeTypes \
+    tests

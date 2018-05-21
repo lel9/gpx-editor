@@ -35,7 +35,7 @@ void RouteTableModel::recoverRoutes()
     QDir dir(dataPath);
     if (!dir.exists())
         dir.mkpath(dataPath);
-    dataPath = dir.absoluteFilePath("routes.xml");
+    dataPath = dir.absoluteFilePath(filename);
 
     try
     {
@@ -194,6 +194,11 @@ void RouteTableModel::setCurrentRouteIndex(int row)
         currentIndex = row;
     else
         currentIndex = 0;
+}
+
+void RouteTableModel::setFileNameToSave(const QString &name)
+{
+    filename = name;
 }
 
 void RouteTableModel::loadRoutes(shared_ptr<RouteLoader> loader)

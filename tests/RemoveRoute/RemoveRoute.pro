@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += widgets testlib positioning printsupport
+QT       += testlib positioning printsupport
 
 TARGET = tst_remove_route_test
 CONFIG   += console
@@ -17,7 +17,6 @@ TEMPLATE = app
 
 SOURCES += tst_remove_route_test.cpp \
     ../../src/exceptions.cpp \
-    ../../src/point_table_model.cpp \
     ../../src/route.cpp \
     ../../src/route_table_model.cpp \
     ../../src/converter.cpp \
@@ -33,15 +32,16 @@ SOURCES += tst_remove_route_test.cpp \
     ../../src/remove_point_command.cpp \
     ../../src/remove_route_command.cpp \
     ../../src/qcustomplot/qcustomplot.cpp \
-    route_factory.cpp \
     ../data_struct.cpp \
     ../../src/command_manager.cpp \
-    ../../src/model_index_iterator.cpp
+    ../../src/model_index_iterator.cpp \
+    ../../src/table_index.cpp \
+    ../../src/visitor_manager.cpp \
+    ../route_factory.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 HEADERS += \
     ../../src/exceptions.h \
-    ../../src/point_table_model.h \
     ../../src/route.h \
     ../../src/route_table_model.h \
     ../../src/converter.h \
@@ -59,6 +59,9 @@ HEADERS += \
     ../../src/remove_route_command.h \
     ../../src/qcustomplot/qcustomplot.h \
     ../data_struct.h \
-    route_factory.h \
     ../../src/command_manager.h \
-    ../../src/model_index_iterator.h
+    ../../src/model_index_iterator.h \
+    ../../src/table_index.h \
+    ../../src/visitor.h \
+    ../../src/visitor_manager.h \
+    ../route_factory.h

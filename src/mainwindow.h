@@ -85,6 +85,7 @@ public slots:
     virtual void setRedoEnabled(bool enable) override;
 
     virtual void selectRoute(int row) override;
+    virtual void selectPoint(int row) override;
 
     virtual void addOperation(const QString &name) override;
     virtual void removeOperation(int index) override;

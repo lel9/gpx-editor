@@ -1,7 +1,7 @@
 #include "testview.h"
 
 TestView::TestView(const QVector<RouteData> routes, QVector<PointData> points) :
-    _routeData(routes), _pointData(points), selectedRouteRow(0), selectedPointRow(0)
+    _routeData(routes), _pointData(points), _selectedRouteRow(0), _selectedPointRow(0)
 {
 }
 
@@ -10,8 +10,8 @@ TestView::TestView(const TestView &other) :
 {
     _routeData = other._routeData;
     _pointData = other._pointData;
-    selectedPointRow = other.selectedPointRow;
-    selectedRouteRow = other.selectedRouteRow;
+    _selectedPointRow = other._selectedPointRow;
+    _selectedRouteRow = other._selectedRouteRow;
     _polyline = other._polyline;
     _plotKeys = other._plotKeys;
     _plotValues = other._plotValues;
@@ -21,25 +21,14 @@ TestView::~TestView()
 {
 }
 
-#include <QStandardItemModel>
-QModelIndexList TestView::selectedRouteRows() const
+int TestView::selectedRouteRow() const
 {
-    QModelIndexList list;
-    QStandardItemModel model;
-    model.setRowCount(_routeData.length());
-    model.setColumnCount(3);
-    list.append(model.index(selectedRouteRow, 0));
-    return list;
+    return _selectedRouteRow;
 }
 
-QModelIndexList TestView::selectedPointRows() const
+int TestView::selectedPointRow() const
 {
-    QModelIndexList list;
-    QStandardItemModel model;
-    model.setRowCount(_pointData.length());
-    model.setColumnCount(3);
-    list.append(model.index(selectedPointRow, 0));
-    return list;
+    return _selectedPointRow;
 }
 
 QString TestView::polyline() const
@@ -47,7 +36,7 @@ QString TestView::polyline() const
     return _polyline;
 }
 
-QVariant TestView::routeData(const QModelIndex &index) const
+QVariant TestView::routeData(const TableIndex &index) const
 {
     switch (index.column())
     {
@@ -66,7 +55,7 @@ QVariant TestView::routeData(const QModelIndex &index) const
     return QVariant();
 }
 
-QVariant TestView::pointData(const QModelIndex &index) const
+QVariant TestView::pointData(const TableIndex &index) const
 {
     switch (index.column())
     {
@@ -123,6 +112,14 @@ void TestView::setRedoEnabled(bool)
 {
 }
 
+void TestView::addOperation(const QString &)
+{
+}
+
+void TestView::removeOperation(int)
+{
+}
+
 BaseView *TestView::copy()
 {
     TestView *view = new TestView(*this);
@@ -174,7 +171,7 @@ void TestView::setPointViewHeaders(const QStringList &)
 {
 }
 
-void TestView::updateRouteView(const QModelIndex &index, const QVariant &data)
+void TestView::updateRouteView(const TableIndex &index, const QVariant &data)
 {
     switch (index.column())
     {
@@ -192,7 +189,7 @@ void TestView::updateRouteView(const QModelIndex &index, const QVariant &data)
     }
 }
 
-void TestView::updatePointView(const QModelIndex &index, const QVariant &data)
+void TestView::updatePointView(const TableIndex &index, const QVariant &data)
 {
     switch (index.column())
     {
@@ -220,8 +217,17 @@ void TestView::showErrorMessage(const QString &)
 {
 }
 
+void TestView::setOperationResult(const QString &)
+{
+}
+
 void TestView::selectRoute(int row)
 {
-    selectedRouteRow = row;
+    _selectedRouteRow = row;
+}
+
+void TestView::selectPoint(int row)
+{
+    _selectedPointRow = row;
 }
 

@@ -5,7 +5,7 @@
 #include "../../src/exceptions.h"
 #include "../../src/presenter.h"
 #include "../testview.h"
-#include "route_factory.h"
+#include "../route_factory.h"
 
 Q_DECLARE_METATYPE(shared_ptr<Route>)
 Q_DECLARE_METATYPE(RouteTableModel)
@@ -113,7 +113,7 @@ void RemoveRouteTest::test1(int index, int routeCount)
     TestView *view = new TestView(routeData, QVector<PointData>());
     TestView *resView = new TestView(resRouteData, QVector<PointData>());
 
-    if (index < model->rowCount()-1)
+    if (index < model->routesCount()-1)
         resView->selectRoute(index);
     else
         resView->selectRoute(index-1);

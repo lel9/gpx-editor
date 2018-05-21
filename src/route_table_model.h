@@ -13,7 +13,9 @@ private:
     QVector<shared_ptr<Route>> _routes;
     int currentIndex;
 
-    QString dataPath; // куда сохранять данные после завершения программы
+    // куда сохранять данные после завершения программы
+    QString dataPath;
+    QString filename = "routes.xml";
 
 public:
     RouteTableModel();
@@ -56,6 +58,7 @@ signals:
 
 public:
     // для тестов
+    void setFileNameToSave(const QString &name);
     RouteTableModel& operator =(const RouteTableModel &model);
     friend bool operator ==(const RouteTableModel &first, const RouteTableModel &second);
     friend bool operator !=(const RouteTableModel &first, const RouteTableModel &second);

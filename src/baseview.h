@@ -53,6 +53,7 @@ public slots:
     virtual void setRedoEnabled(bool enable) = 0;
 
     virtual void selectRoute(int row) = 0;
+    virtual void selectPoint(int row) = 0;
 
     virtual void addOperation(const QString &name) = 0;
     virtual void removeOperation(int index) = 0;

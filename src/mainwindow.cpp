@@ -113,6 +113,12 @@ void MainWindow::selectRoute(int row)
     ui->tableOfRoutes->selectRow(row);
 }
 
+void MainWindow::selectPoint(int row)
+{
+    ui->tableOfPoints->clearSelection();
+    ui->tableOfPoints->selectRow(row);
+}
+
 void MainWindow::setPolyline(const QString &polyline)
 {
     ui->textEditPolyline->setText(polyline);

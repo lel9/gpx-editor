@@ -190,7 +190,11 @@
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
-             <widget class="QTextEdit" name="operationResult"/>
+             <widget class="QTextEdit" name="operationResult">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
